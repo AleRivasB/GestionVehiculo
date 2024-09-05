@@ -1,0 +1,247 @@
+﻿@{
+    ViewData["Title"] = "Vehiculo Management";
+        
+}
+
+<div class="text-center">
+    <h1 class="mt-4">Gestión de Vehiculo</h1>
+    <button class="btn btn-primary mb-3" onclick="openCreateModal()">Agregar Vehiculo</button>
+
+    <div class="row">
+        <div class="col-md-12">
+            <table id="vehiculoTable" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Año</th>
+                        <th>Cantidad Puertas</th>
+                        <th>Marca</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var vehiculo in ViewBag.Vehiculo)
+                    {
+                        <tr id="row-@vehiculo.Id">
+                            <td>@vehiculo.Nombre</td>
+                            <td>@vehiculo.anio</td>
+                            <td>@vehiculo.cantidadPuerta</td>
+                            <td>@vehiculo.marca</td>
+                            <td>
+                                <button class="btn btn-warning" onclick="openEditModal('@vehiculo.Id')">Editar</button>
+                                <button class="btn btn-danger" onclick="confirmDelete('@vehiculo.Id')">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar vehiculo -->
+<div class="modal fade" id="vehiculoModal" tabindex="-1" aria-labelledby="empleadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="empleadoModalLabel">Agregar/Editar Vehiculo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="vehiculoForm">
+                    <input type="hidden" id="vehiculoId">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="anio" class="form-label">Año</label>
+                        <input type="text" class="form-control" id="anio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cantidadPuerta" class="form-label">Cantidad Puertas</label>
+                        <input type="number" class="form-control" id="cantidad" required>
+                    </div>
+                        
+                        <div class="mb-3">
+                            <label for="marca" class="form-label">Marca</label>
+                            <select class="form-select" id="marcaId" aria-label="Marca">
+                                @foreach (var item in ViewBag.Marca)
+                                {
+                                    <option value="@item.Id">@item.nombre</option>
+                                }
+                            </select>
+                            
+                            
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveButton" onclick="saveVehiculo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#vehiculoTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
+            }
+        });
+    });
+
+    function openCreateModal() {
+        $('#vehiculoModalLabel').text('Agregar vehiculo');
+        $('#vehiculoForm')[0].reset();
+        $('#vehiculoId').val('0');
+        $('#vehiculoModal').modal('show');
+    }
+
+    function openEditModal(id) {
+        try {
+
+            var data = {
+                Id: parseInt(id)
+            };
+
+            console.log('', data);
+
+            $.ajax({
+              
+                url: '/Vehiculo/GetVehiculoById/',
+                type: 'POST',
+                data: data,
+                success: function (vehiculo) {
+                    $('#vehiculoModalLabel').text('Editar Vehiculo');
+                    $('#vehiculoId').val(vehiculo.id);
+                    $('#nombre').val(vehiculo.nombre);
+                    $('#anio').val(vehiculo.anio);
+                    $('#cantidadPuertas').val(vehiculo.cantidadPuertas);
+                    $('#marcaId').val(vehiculo.marcaId);
+
+                    $('#vehiculoModal').modal('show');
+                },
+                error: function () {
+                    Swal.fire(
+                        'Error',
+                        'Ocurrió un error al guardar el vehiculo.',
+                        'error'
+                    );
+                }
+            });
+        } catch (error) {
+            console.error('Error al abrir el modal de edición:', error);
+            Swal.fire(
+                'Error',
+                'Ocurrió un error inesperado al intentar abrir el modal de edición.',
+                'error'
+            );
+        }
+    }
+
+    function saveVehiculo() {
+        try {
+            var id = $('#vehiculoId').val();
+
+            console.log('->',id);
+
+            var nombre = $('#nombre').val();
+            var anio = $('#anio').val();
+            var cantidadPuerta = $('#cantidadPuerta').val();
+            var dui = $('#dui').val();
+            var marcaId = $('#marcaId').val();
+
+            var url = (id!=='0') ? '/Vehiculo/Edit' : '/Vehiculo/Create';
+            
+            var data = {
+                Id: parseInt(id),
+                Nombre: nombre,
+                Anio: anio,
+                cantidadPuerta: cantidadPuerta,
+                MarcaId: parseInt(marcaId)
+            };
+
+            console.log('',data);
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                success: function (response) { 
+                    Swal.fire(
+                        'Guardado',
+                        'El vehiculo ha sido guardado correctamente.',
+                        'success'
+                    );
+                    location.reload();
+                },
+                error: function () {
+                    Swal.fire(
+                        'Error',
+                        'Ocurrió un error al guardar el vehiculo.',
+                        'error'
+                    );
+                }
+            });
+        } catch (error) {
+            console.error('Error al guardar el vehiculo:', error);
+            Swal.fire(
+                'Error',
+                'Ocurrió un error inesperado al intentar guardar el vehiculo.',
+                'error'
+            );
+        }
+    }
+
+    function confirmDelete(id) {
+        try {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminarlo!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/Vehiculo/Delete',
+                        type: 'POST',
+                        data: { id: id },
+                        success: function (response) {
+                            Swal.fire(
+                                'Eliminado!',
+                                'El vehiculo ha sido eliminado.',
+                                'success'
+                            );
+                            $('#row-' + id).remove();
+                        },
+                        error: function () {
+                            Swal.fire(
+                                'Error',
+                                'Ocurrió un error al eliminar el vehiculo.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            console.error('Error al intentar eliminar el vehiculo:', error);
+            Swal.fire(
+                'Error',
+                'Ocurrió un error inesperado al intentar eliminar el vehiculo.',
+                'error'
+            );
+        }
+    }
+
+</script>
+
+
+
